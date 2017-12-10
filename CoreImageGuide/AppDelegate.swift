@@ -16,6 +16,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        let splitVC = self.window?.rootViewController as! UISplitViewController
+        let leftNavVC = splitVC.viewControllers.first as! UINavigationController
+        let filterListVC = leftNavVC.topViewController as! FilterListVC
+        let outputVC = splitVC.viewControllers.last as! OutputVC
+        
+
+        filterListVC.delegate = outputVC
+        let initalFilter = ""
+        outputVC.filterName = initalFilter
+        
         return true
     }
 
