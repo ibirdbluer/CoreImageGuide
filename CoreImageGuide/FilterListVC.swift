@@ -9,13 +9,15 @@
 import UIKit
 import CoreImage
 
-protocol FilterSelectionDelegate: class {
-    func filterSelected(name: String)
-}
+//protocol FilterSelectionDelegate: class {
+//    func filterSelected(name: String)
+//}
 
 class FilterListVC: UITableViewController {
 
-    weak var delegate: FilterSelectionDelegate?
+    var detailViewController: OutputVC?
+
+//    weak var delegate: FilterSelectionDelegate?
     var filters: [String : [String]] = [:]
     let filterCategories = FilterQuery.filterCategory()
 
@@ -23,6 +25,10 @@ class FilterListVC: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        if let split = splitViewController {
+            let controllers = split.viewControllers
+            detailViewController = (controllers[controllers.count-1] as! UINavigationController).topViewController as? OutputVC
+        }
         
         if let result = FilterQuery.systemFilterList(categories: filterCategories) {
             filters = result
@@ -32,6 +38,21 @@ class FilterListVC: UITableViewController {
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "showDetail" {
+            if let indexPath = tableView.indexPathForSelectedRow {
+//                let object = objects[indexPath.row] as! NSDate
+                if let name = filters[filterCategories[indexPath.section]]?[indexPath.row] {
+                    let controller = (segue.destination as! UINavigationController).topViewController as! OutputVC
+                    controller.filterName = name
+                }
+//                controller.detailItem = object
+//                controller.navigationItem.leftBarButtonItem = splitViewController?.displayModeButtonItem
+//                controller.navigationItem.leftItemsSupplementBackButton = true
+            }
+        }
     }
 
     // MARK: - Table view data source
@@ -65,11 +86,17 @@ class FilterListVC: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if let name = filters[filterCategories[indexPath.section]]?[indexPath.row] {
-            self.delegate?.filterSelected(name: name)
-            showDetailViewController(self.delegate as! UIViewController, sender: nil)
-        }
+        tableView.deselectRow(at: indexPath, animated: true)
+//        if let name = filters[filterCategories[indexPath.section]]?[indexPath.row] {
+////            self.delegate?.filterSelected(name: name)
+//            showDetailViewController(self.delegate as! UIViewController, sender: nil)
+//        }
     }
+    
+//    override func tableView(_ tableView: UITableView, didUnhighlightRowAt indexPath: IndexPath) {
+//        guard let cell = tableView.cellForRow(at: indexPath) else { return }
+//        cell.contentView.backgroundColor = .white
+//    }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let title = CIFilter.localizedName(forCategory: filterCategories[section])

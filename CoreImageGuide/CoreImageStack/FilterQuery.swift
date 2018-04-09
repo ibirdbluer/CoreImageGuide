@@ -52,6 +52,31 @@ class FilterQuery {
         }
         return filterList
     }
+    
+    class func generateAttributeBarItem(name: String) -> [Any]? {
+        guard let attributes = CIFilter(name: name)?.attributes else { return nil }
+        var filterAttributeDict = [String : [String : Any]]()
+        var filterAttributeArray = [String]()
+        var attributeBarDataArray = [String]()
+        
+        for attribute in attributes.keys {
+            if let attributeValue = attributes[attribute] as? [String : Any] {
+                filterAttributeDict[attribute] = attributeValue
+                filterAttributeArray.append(attribute)
+                if determineIsFilterAttributeBarItem(name: attribute) {
+                    attributeBarDataArray.append(attribute)
+                }
+            }
+        }
+        return [filterAttributeDict, filterAttributeArray, attributeBarDataArray]
+    }
+    
+    private class func determineIsFilterAttributeBarItem(name: String) -> Bool {
+        if name == kCIInputImageKey {
+            return false
+        }
+        return true
+    }
 //    class func localizedName(forFilterName filterName: String) -> String? {
 //        return CIFilter.localizedName(forFilterName: filterName)
 //    }

@@ -9,7 +9,7 @@
 import UIKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDelegate {
 
     var window: UIWindow?
 
@@ -18,14 +18,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         
         let splitVC = self.window?.rootViewController as! UISplitViewController
-        let leftNavVC = splitVC.viewControllers.first as! UINavigationController
-        let filterListVC = leftNavVC.topViewController as! FilterListVC
-        let outputVC = splitVC.viewControllers.last as! OutputVC
-        
+//        let leftNavVC = splitVC.viewControllers.first as! UINavigationController
+//        let filterListVC = leftNavVC.topViewController as! FilterListVC
+//        let outputNav = splitVC.viewControllers.last as! UINavigationController
+//        let outputVC = outputNav.topViewController as! OutputVC
+        splitVC.delegate = self
 
-        filterListVC.delegate = outputVC
-        let initalFilter = ""
-        outputVC.filterName = initalFilter
+//        filterListVC.delegate = outputVC
+//        let initalFilter = ""
+//        outputVC.filterName = initalFilter
         
         return true
     }
@@ -50,6 +51,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+    }
+
+    func splitViewController(_ splitViewController: UISplitViewController, collapseSecondary secondaryViewController:UIViewController, onto primaryViewController:UIViewController) -> Bool {
+        guard let secondaryAsNavController = secondaryViewController as? UINavigationController else { return false }
+        guard let topAsDetailController = secondaryAsNavController.topViewController as? OutputVC else { return false }
+        if topAsDetailController.filterName == nil || topAsDetailController.filterName == "" {
+            // Return true to indicate that we have handled the collapse by doing nothing; the secondary controller will be discarded.
+            return true
+        }
+        return false
     }
 
 

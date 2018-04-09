@@ -12,11 +12,21 @@ class OutputVC: UIViewController {
     
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var attributeBar: UITableView!
+    @IBOutlet weak var barHeightConstraint: NSLayoutConstraint!
     
-    var filterName: String?
+    var filterName: String? = "" {
+        didSet {
+            self.updateAttributesBar(name: self.filterName!)
+            let quene = DispatchQueue(label: "myqueue")
+            quene.async {
+                self.updateOutput()
+            }
+        }
+    }
     var coreImageStack = CoreImageStack()
     var filterAttributeDict = [String : [String : Any]]()
-    var filterAttributeArray = [String]() // save filter parameter keys for showing in filter attribute bar and getting the key when value changed
+    var filterAttributeArray: [String]! // save filter parameter keys for showing in filter attribute bar and getting the key when value changed
+    var attributeBarDataArray = [String]()
     var attributeParameter = [String : Any]()   // filter attribute parameter
     
     var activeSliderValues = [Float]()
@@ -26,7 +36,12 @@ class OutputVC: UIViewController {
         super.viewDidLoad()
         
         imageView.contentMode = .scaleAspectFit
+//        imageView.isHidden = true
         
+        attributeBar.tableFooterView = UIView()
+        
+        barHeightConstraint.constant = CGFloat(attributeBarDataArray.count * 32)
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -34,29 +49,34 @@ class OutputVC: UIViewController {
     }
     
     func updateAttributesBar(name: String) {
-        var parameters = [String : Any]()
+        guard let dictArray = FilterQuery.generateAttributeBarItem(name: name) else { return }
         filterAttributeDict = [String : [String : Any]]()
         filterAttributeArray = [String]()
         
-        guard let attributes = CIFilter(name: name)?.attributes else { return }
-
-        
-        for attribute in attributes.keys {
-            if let attributeValue = attributes[attribute] as? [String : Any] {
-                filterAttributeDict[attribute] = attributeValue
-                filterAttributeArray.append(attribute)
-                
+        attributeBarDataArray = dictArray[2] as! [String];
+        filterAttributeArray = dictArray[1] as! [String];
+        filterAttributeDict = dictArray[0] as! [String : [String : Any]];
+    
+       
+//        if let bar = attributeBar {
+//            attributeBar.reloadData()
+//        }
+        print("\n\n\(name)")
+        for key in filterAttributeDict.keys {
+            print("\n----\(key)-----")
+            if let dict = filterAttributeDict[key] {
+                for subkey in dict.keys {
+                    print("\(subkey) : \(String(describing: dict[subkey]))")
+                }
             }
         }
-        
-        attributeBar.reloadData()
 //        print("\(filterAttributeDict)\n")
-        
     }
     
     
-    let image = CIImage(image: UIImage(named: "IMG_1108.jpg")!)
-    
+//    let image = CIImage(image: UIImage(named: "IMG_1108.jpg")!)
+    let image = CIImage(image: UIImage(named: "WechatIMG1455.jpeg")!)
+
     func updateOutput() {
         guard filterName != nil else {
             return
@@ -64,29 +84,30 @@ class OutputVC: UIViewController {
         
         
         attributeParameter[kCIInputImageKey] = image
-        if attributeParameter[kCIInputScaleKey] == nil {
-            attributeParameter[kCIInputScaleKey] = 1
-        }
+//        if attributeParameter[kCIInputScaleKey] == nil {
+//            attributeParameter[kCIInputScaleKey] = 1
+//        }
 
 //        let ciimage = coreImageStack.oldFilmEffect(inputImage: image!)
 //        let group = DispatchGroup()
-        
-//        let queue = DispatchQueue(label: "myqueue", attributes: .concurrent)
-//        queue.async {
+
+        let queue = DispatchQueue(label: "myqueue", attributes: .concurrent)
+        queue.async {
             guard let ciimage = self.coreImageStack.commenFilter(name: self.filterName!, parameter: self.attributeParameter) else { return }
             guard let cgImage = self.coreImageStack.context.createCGImage(ciimage, from: ciimage.extent) else { return }
             self.activeSliderValues.removeAll()
             print("remove slider group")
-            DispatchQueue.main.async {
+            DispatchQueue.main.sync {
                 self.imageView.image = UIImage(cgImage: cgImage)
             }
-//        }
+        }
 //        group.leave()
     }
 
     // MARK: - Slider Action
     @IBAction func sliderValueChange(_ sender: UISlider) {
-        guard let key = filterAttributeArray[sender.tag] as? String else { return }
+        guard sender.tag < attributeBarDataArray.count else {return }
+        let key = attributeBarDataArray[sender.tag]
         
         // caculate real value
         let max = filterAttributeDict[key]!["CIAttributeSliderMax"] as! Float
@@ -102,26 +123,42 @@ class OutputVC: UIViewController {
         print("add value: \(activeSliderValues.count)")
         if activeSliderValues.count == 1 {
             print("update output")
-            let quene = DispatchQueue(label: "myqueue")
-            quene.async {
+//            let quene = DispatchQueue(label: "myqueue")
+//            quene.async {
                 self.updateOutput()
-            }
+//            }
         }
     }
-
+    
+    // MARK: - Touch
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touchPoint = touches.first?.location(in: self.imageView) else { return }
+        guard filterAttributeArray.contains(kCIInputCenterKey) else { return }
+        let vector = CommonDataHelper.cgPointToCIVector(point: touchPoint, baseSize: self.imageView.frame.size)
+        attributeParameter[kCIInputCenterKey] = vector
+        updateOutput()
+        
+    }
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touchPoint = touches.first?.location(in: self.imageView) else { return }
+        guard filterAttributeArray.contains(kCIInputCenterKey) else { return }
+        let vector = CommonDataHelper.cgPointToCIVector(point: touchPoint, baseSize: self.imageView.frame.size)
+        attributeParameter[kCIInputCenterKey] = vector
+        updateOutput()
+    }
     
 }
 
-extension OutputVC: FilterSelectionDelegate {
-    func filterSelected(name: String) {
-        filterName = name
-        self.updateAttributesBar(name: self.filterName!)
-        let quene = DispatchQueue(label: "myqueue")
-        quene.async {
-            self.updateOutput()
-        }
-    }
-}
+//extension OutputVC: FilterSelectionDelegate {
+//    func filterSelected(name: String) {
+//        filterName = name
+//        self.updateAttributesBar(name: self.filterName!)
+//        let quene = DispatchQueue(label: "myqueue")
+//        quene.async {
+//            self.updateOutput()
+//        }
+//    }
+//}
 
 extension OutputVC: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -129,16 +166,16 @@ extension OutputVC: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filterAttributeArray.count
+        return attributeBarDataArray.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let placeholderCell = tableView.dequeueReusableCell(withIdentifier: "PlaceholderCell")
-        let key = filterAttributeArray[indexPath.row]
+        let key = attributeBarDataArray[indexPath.row]
         guard let attributeValueDict = filterAttributeDict[key] else { return placeholderCell! }
 
         guard let attrType = attributeValueDict["CIAttributeType"] as? String else { return placeholderCell! }
-        if attrType == "CIAttributeTypeScalar" || attrType == "CIAttributeTypeDistance" {
+        if attrType == "CIAttributeTypeScalar" || attrType == "CIAttributeTypeDistance" || attrType == "CIAttributeTypeAngle"{
             let cell = tableView.dequeueReusableCell(withIdentifier: "SliderCell", for: indexPath) as! SliderCell
             cell.titleLabel.text = key
             
@@ -153,10 +190,18 @@ extension OutputVC: UITableViewDelegate, UITableViewDataSource {
             cell.slider.tag = indexPath.row
 
             return cell
+        }else if attrType == "CIAttributeTypePosition" {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "DetailDescriptionCell", for: indexPath) as! DetailDescriptionCell
+            cell.theTitleLabel.text = key
+            cell.theDetailLabel.text = "touch photo area"
+            
+            return cell
+
         }else {
             return placeholderCell!
         }
         
     }
 }
+
 

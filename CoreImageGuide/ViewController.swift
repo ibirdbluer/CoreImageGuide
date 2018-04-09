@@ -20,7 +20,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let inputImage = CIImage(image: UIImage(named: "IMG_1158.jpg")!)
+//        let inputImage = CIImage(image: UIImage(named: "IMG_1158.jpg")!)
         
 
 //        imageView.image = UIImage(ciImage: filter!.outputImage!)

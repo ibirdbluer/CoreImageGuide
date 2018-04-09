@@ -26,8 +26,8 @@ class CoreImageStack {
     lazy var context: CIContext = {
         
 //        return CIContext()
-//        return CIContext(mtlDevice: MTLCreateSystemDefaultDevice()!)
-        return CIContext(eaglContext: EAGLContext(api: .openGLES2))
+        return CIContext(mtlDevice: MTLCreateSystemDefaultDevice()!)
+//        return CIContext(eaglContext: EAGLContext(api: .openGLES2))
     }()
 //    lazy var context: EAGLContext = {
 //        return EAGLContext(api: .openGLES2)
