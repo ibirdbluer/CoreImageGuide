@@ -30,6 +30,7 @@ class ViewController: UIViewController {
     
     }
     
+    
     func oldFilmEffect() {
         let inputImage = CIImage(image: UIImage(named: "IMG_1108.jpg")!)
         // 1.创建CISepiaTone滤镜

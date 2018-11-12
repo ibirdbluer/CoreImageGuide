@@ -34,14 +34,25 @@ class OutputVC: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         imageView.contentMode = .scaleAspectFit
 //        imageView.isHidden = true
         
         attributeBar.tableFooterView = UIView()
         
         barHeightConstraint.constant = CGFloat(attributeBarDataArray.count * 32)
+//        testFunctionSwiftFilter()
+        
+        
+    }
 
+    func testFunctionSwiftFilter() {
+        let image = CIImage(image: UIImage(named: "WechatIMG1455.jpeg")!)!
+        let radius = 5.0
+        let color = UIColor.red.withAlphaComponent(0.2)
+        let blurredImage = blur(radius: radius)(image)
+        let overlaidImage = overlay(color: color)(blurredImage)
+        self.imageView.image = UIImage(ciImage: overlaidImage)
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -74,8 +85,12 @@ class OutputVC: UIViewController {
     }
     
     
-//    let image = CIImage(image: UIImage(named: "IMG_1108.jpg")!)
-    let image = CIImage(image: UIImage(named: "WechatIMG1455.jpeg")!)
+    let image = CIImage(image: UIImage(named: "youcan.jpg")!)
+//    let image = CIImage(image: UIImage(named: "WechatIMG1455.jpeg")!)
+
+    var lock = NSLock()
+    var queueDidFinished = true
+    let operationQueue = OperationQueue()
 
     func updateOutput() {
         guard filterName != nil else {
@@ -90,17 +105,43 @@ class OutputVC: UIViewController {
 
 //        let ciimage = coreImageStack.oldFilmEffect(inputImage: image!)
 //        let group = DispatchGroup()
-
+//        lock.lock()
         let queue = DispatchQueue(label: "myqueue", attributes: .concurrent)
-        queue.async {
+        let operation = BlockOperation {
+            if !self.queueDidFinished {
+                print(0)
+                return
+            }
+            print("1")
+            self.queueDidFinished = false
             guard let ciimage = self.coreImageStack.commenFilter(name: self.filterName!, parameter: self.attributeParameter) else { return }
             guard let cgImage = self.coreImageStack.context.createCGImage(ciimage, from: ciimage.extent) else { return }
-            self.activeSliderValues.removeAll()
-            print("remove slider group")
             DispatchQueue.main.sync {
                 self.imageView.image = UIImage(cgImage: cgImage)
+                self.queueDidFinished = true
+                print(2)
             }
         }
+        
+        operation.completionBlock = {
+            print(3)
+        }
+        
+        operationQueue.addOperation(operation)
+        
+//        queue.sync {
+//            if !queueDidFinished {
+//
+//            }
+//            guard let ciimage = self.coreImageStack.commenFilter(name: self.filterName!, parameter: self.attributeParameter) else { return }
+//            guard let cgImage = self.coreImageStack.context.createCGImage(ciimage, from: ciimage.extent) else { return }
+//            self.activeSliderValues.removeAll()
+//            print("remove slider group")
+//            DispatchQueue.main.sync {
+//                self.imageView.image = UIImage(cgImage: cgImage)
+//            }
+//        }
+//        lock.unlock()
 //        group.leave()
     }
 
@@ -121,13 +162,13 @@ class OutputVC: UIViewController {
         sliderValues.append(realValue)
 
         print("add value: \(activeSliderValues.count)")
-        if activeSliderValues.count == 1 {
+//        if activeSliderValues.count == 1 {
             print("update output")
 //            let quene = DispatchQueue(label: "myqueue")
 //            quene.async {
                 self.updateOutput()
 //            }
-        }
+//        }
     }
     
     // MARK: - Touch

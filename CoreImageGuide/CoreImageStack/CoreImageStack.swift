@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreImage
+import AVFoundation
 
 class CoreImageStack {
     
@@ -35,6 +36,7 @@ class CoreImageStack {
 //    }()
     
     func traverseFilterAttributes(filterName: String) -> [String] {
+        
         guard let filter = CIFilter(name: filterName) else { return [] }
         var attributes = [String]()
         for attribute in filter.attributes.keys {
